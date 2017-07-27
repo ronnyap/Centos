@@ -52,7 +52,7 @@ chkconfig nginx on
 chkconfig php-fpm on
 
 # install essential package
-yum -y install rrdtool screen iftop htop nmap bc nethogs openvpn vnstat ngrep mtr git zsh mrtg unrar rsyslog rkhunter mrtg net-snmp net-snmp-utils expect nano bind-utils
+yum -y install rrdtool screen iftop htop nmap bc nethogs vnstat ngrep mtr git zsh mrtg unrar rsyslog rkhunter mrtg net-snmp net-snmp-utils expect nano bind-utils
 yum -y groupinstall 'Development Tools'
 yum -y install cmake
 
@@ -63,10 +63,10 @@ service exim stop
 chkconfig exim off
 
 # setting vnstat
-vnstat -u -i venet0
+vnstat -u -i eth0
 echo "MAILTO=root" > /etc/cron.d/vnstat
 echo "*/5 * * * * root /usr/sbin/vnstat.cron" >> /etc/cron.d/vnstat
-sed -i 's/eth0/venet0/g' /etc/sysconfig/vnstat
+sed -i 's/eth0/eth0/g' /etc/sysconfig/vnstat
 service vnstat restart
 chkconfig vnstat on
 
@@ -83,7 +83,7 @@ cd
 wget -O /etc/nginx/nginx.conf "https://raw.github.com/arieonline/autoscript/master/conf/nginx.conf"
 sed -i 's/www-data/nginx/g' /etc/nginx/nginx.conf
 mkdir -p /home/vps/public_html
-echo "<pre>Setup by KangArie | JualSSH.com | @arieonline | 7946F434</pre>" > /home/vps/public_html/index.html
+echo "<pre>Setup by Ronn</pre>" > /home/vps/public_html/index.html
 echo "<?php phpinfo(); ?>" > /home/vps/public_html/info.php
 rm /etc/nginx/conf.d/*
 wget -O /etc/nginx/conf.d/vps.conf "https://raw.github.com/arieonline/autoscript/master/conf/vps.conf"
@@ -91,40 +91,6 @@ sed -i 's/apache/nginx/g' /etc/php-fpm.d/www.conf
 chmod -R +rx /home/vps
 service php-fpm restart
 service nginx restart
-
-# install openvpn
-wget -O /etc/openvpn/openvpn.tar "https://raw.github.com/arieonline/autoscript/master/conf/openvpn-debian.tar"
-cd /etc/openvpn/
-tar xf openvpn.tar
-wget -O /etc/openvpn/1194.conf "https://raw.github.com/arieonline/autoscript/master/conf/1194-centos.conf"
-if [ "$OS" == "x86_64" ]; then
-  wget -O /etc/openvpn/1194.conf "https://raw.github.com/arieonline/autoscript/master/conf/1194-centos64.conf"
-fi
-wget -O /etc/iptables.up.rules "https://raw.github.com/arieonline/autoscript/master/conf/iptables.up.rules"
-sed -i '$ i\iptables-restore < /etc/iptables.up.rules' /etc/rc.local
-sed -i '$ i\iptables-restore < /etc/iptables.up.rules' /etc/rc.d/rc.local
-MYIP=`curl -s ifconfig.me`;
-MYIP2="s/xxxxxxxxx/$MYIP/g";
-sed -i $MYIP2 /etc/iptables.up.rules;
-iptables-restore < /etc/iptables.up.rules
-sysctl -w net.ipv4.ip_forward=1
-sed -i 's/net.ipv4.ip_forward = 0/net.ipv4.ip_forward = 1/g' /etc/sysctl.conf
-service openvpn restart
-chkconfig openvpn on
-cd
-
-# configure openvpn client config
-cd /etc/openvpn/
-wget -O /etc/openvpn/1194-client.ovpn "https://raw.github.com/arieonline/autoscript/master/conf/1194-client.conf"
-sed -i $MYIP2 /etc/openvpn/1194-client.ovpn;
-PASS=`cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 15 | head -n 1`;
-useradd -M -s /bin/false KangArie
-echo "KangArie:$PASS" | chpasswd
-echo "KangArie" > pass.txt
-echo "$PASS" >> pass.txt
-tar cf client.tar 1194-client.ovpn pass.txt
-cp client.tar /home/vps/public_html/
-cd
 
 # install badvpn
 wget -O /usr/bin/badvpn-udpgw "https://raw.github.com/arieonline/autoscript/master/conf/badvpn-udpgw"
@@ -176,8 +142,8 @@ tar xf vnstat_php_frontend-1.5.1.tar.gz
 rm vnstat_php_frontend-1.5.1.tar.gz
 mv vnstat_php_frontend-1.5.1 vnstat
 cd vnstat
-sed -i 's/eth0/venet0/g' config.php
-sed -i "s/\$iface_list = array('venet0', 'sixxs');/\$iface_list = array('venet0');/g" config.php
+sed -i 's/eth0/eth0/g' config.php
+sed -i "s/\$iface_list = array('eth0', 'sixxs');/\$iface_list = array('eth0');/g" config.php
 sed -i "s/\$language = 'nl';/\$language = 'en';/g" config.php
 sed -i 's/Internal/Internet/g' config.php
 sed -i '/SixXS IPv6/d' config.php
@@ -216,34 +182,59 @@ cd
 wget -O speedtest_cli.py "https://raw.github.com/sivel/speedtest-cli/master/speedtest_cli.py"
 wget -O bench-network.sh "https://raw.github.com/arieonline/autoscript/master/conf/bench-network.sh"
 wget -O ps_mem.py "https://raw.github.com/pixelb/ps_mem/master/ps_mem.py"
-wget -O limit.sh "https://raw.github.com/arieonline/autoscript/master/conf/limit.sh"
-curl http://script.jualssh.com/user-login.sh > user-login.sh
-curl http://script.jualssh.com/user-expire.sh > user-expire.sh
-curl http://script.jualssh.com/user-limit.sh > user-limit.sh
+wget -O limit.sh "https://raw.github.com/cyber4rt/installer/master/limit.sh"
+wget -O dropmon "https://raw.github.com/cyber4rt/installer/master/dropmon"
+wget -O userlogin.sh "https://raw.github.com/cyber4rt/installer/master/userlogin.sh"
+wget -O userexpired.sh "https://raw.github.com/cyber4rt/installer/master/userexpired.sh"
+wget -O userlimit.sh "https://raw.github.com/cyber4rt/installer/master/userlimit.sh"
 echo "0 0 * * * root /root/user-expire.sh" > /etc/cron.d/user-expire
 sed -i '$ i\screen -AmdS limit /root/limit.sh' /etc/rc.local
 sed -i '$ i\screen -AmdS limit /root/limit.sh' /etc/rc.d/rc.local
+echo "0 0 * * * root /root/userexpired.sh" > /etc/cron.d/userexpired
+echo "0 0 * * * root sleep 5 /root/userexpired.sh" > /etc/cron.d/userexpired
+echo "0 0 * * * root sleep 10 /root/userexpired.sh" > /etc/cron.d/userexpired
+echo "0 0 * * * root sleep 15 /root/userexpired.sh" > /etc/cron.d/userexpired
+echo "0 0 * * * root sleep 20 /root/userexpired.sh" > /etc/cron.d/userexpired
+echo "0 0 * * * root sleep 25 /root/userexpired.sh" > /etc/cron.d/userexpired
+echo "0 0 * * * root sleep 30 /root/userexpired.sh" > /etc/cron.d/userexpired
+echo "0 0 * * * root sleep 35 /root/userexpired.sh" > /etc/cron.d/userexpired
+echo "0 0 * * * root sleep 40 /root/userexpired.sh" > /etc/cron.d/userexpired
+echo "0 0 * * * root sleep 45 /root/userexpired.sh" > /etc/cron.d/userexpired
+echo "0 0 * * * root sleep 50 /root/userexpired.sh" > /etc/cron.d/userexpired
+echo "0 0 * * * root sleep 55 /root/userexpired.sh" > /etc/cron.d/userexpired
+echo "* * * * * root /root/userlimit.sh" > /etc/cron.d/userlimit
+echo "* * * * * root sleep 5 /root/userlimit.sh" > /etc/cron.d/userlimit
+echo "* * * * * root sleep 10 /root/userlimit.sh" > /etc/cron.d/userlimit
+echo "* * * * * root sleep 15 /root/userlimit.sh" > /etc/cron.d/userlimit
+echo "* * * * * root sleep 20 /root/userlimit.sh" > /etc/cron.d/userlimit
+echo "* * * * * root sleep 25 /root/userlimit.sh" > /etc/cron.d/userlimit
+echo "* * * * * root sleep 30 /root/userlimit.sh" > /etc/cron.d/userlimit
+echo "* * * * * root sleep 35 /root/userlimit.sh" > /etc/cron.d/userlimit
+echo "* * * * * root sleep 40 /root/userlimit.sh" > /etc/cron.d/userlimit
+echo "* * * * * root sleep 45 /root/userlimit.sh" > /etc/cron.d/userlimit
+echo "* * * * * root sleep 50 /root/userlimit.sh" > /etc/cron.d/userlimit
+echo "* * * * * root sleep 55 /root/userlimit.sh" > /etc/cron.d/userlimit
 chmod +x bench-network.sh
 chmod +x speedtest_cli.py
 chmod +x ps_mem.py
-chmod +x user-login.sh
-chmod +x user-expire.sh
-chmod +x user-limit.sh
+chmod +x userlogin.sh
+chmod +x userexpired.sh
+chmod +x userlimit.sh
 chmod +x limit.sh
+chmod +x dropmon
 
 # cron
 service crond start
 chkconfig crond on
 
 # set time GMT +7
-ln -fs /usr/share/zoneinfo/Asia/Jakarta /etc/localtime
+ln -fs /usr/share/zoneinfo/Asia/Kuala_Lumpur /etc/localtime
 
 # finalisasi
 chown -R nginx:nginx /home/vps/public_html
 service nginx start
 service php-fpm start
 service vnstat restart
-service openvpn restart
 service snmpd restart
 service sshd restart
 service dropbear restart
